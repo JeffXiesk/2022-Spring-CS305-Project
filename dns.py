@@ -23,23 +23,30 @@ def get_serve():
     global cnt
     cnt = cnt + 1
     res = cnt % port_num
-    while port_used[res]:
+    while port_used[servers[res]]:
         cnt = cnt + 1
         res = cnt % port_num
     return servers[res]
+
+@app.route('/getallservers')
+def get_all():
+    res = ''
+    for i in servers:
+        res+=i+','
+    return res.strip(',')
 
 
 # set a server used by default port request
 @app.route('/occupy_port:<regex("[0-9]+"):port_name>')
 def set_occupied(port_name):
     port_used[port_name] = True
-
+    return 'true'
 
 # release a server used by default port request
 @app.route('/release_port:<regex("[0-9]+"):port_name>')
 def set_released(port_name):
     port_used[port_name] = False
-
+    return 'true'
 
 if __name__ == '__main__':
     # print(1)
@@ -51,3 +58,8 @@ if __name__ == '__main__':
         port_used[servers[i]] = False
     print(servers)
     app.run(port=8888)
+
+
+
+
+    # python3 home/CS305-proj/starter_proxy/dns.py home/CS305-proj/docker_setup/netsim/servers/2servers 
