@@ -44,7 +44,7 @@ def simple():
         url = 'http://127.0.0.1:' + str(default_port) + '/index.html'
     html = requests.get(url)
     return html.content
- 
+
 
 @app.route('/swfobject.js')
 def simple1():
@@ -115,6 +115,7 @@ def simple4(bit_rate,seg, frag):
     start_local_time = time.localtime()
     # print(start_local_time)
 
+    global end_t
     start_t = time.time()
     html = requests.get(url+str(bit_rate)+'Seg'+seg+'-Frag'+frag)
     end_t = time.time()
@@ -122,23 +123,25 @@ def simple4(bit_rate,seg, frag):
     duration = end_t - start_t
 
     len_ = len(html.content)
-    print('content length is: '+str(len(html.content)))
-    print('end - start: '+str(end_t-start_t))
-    tput = float(len_) / duration * 8
+    # print('content length is: '+str(len(html.content)))
+    # print('end - start: '+str(end_t-start_t))
+    tput = (float(len_) / duration * 8 )/ 1000
     Tput[port] = alpha * Tput[port] + (1.0 - alpha) * tput
-    print(Tput[port])
+    print('EWMA is ' + str(Tput[port]))
 
-    time_str = str(time.strftime("%Y-%m-%d %H:%M:%S",start_local_time))
+    # time_str = str(time.strftime("%Y-%m-%d %H:%M:%S",start_local_time))
+    time_str = start_t
 
     file.write('{time} {duration} {tput} {avg_tput} {bitrate} {server_port} {chunkname}\n'.format(time=time_str,
                                                                                                   duration=duration,
-                                                                                                  tput=tput / 1000,
+                                                                                                  tput=tput,
                                                                                                   avg_tput=Tput[port],
                                                                                                   bitrate=bit_rate,
                                                                                                   server_port=port,
                                                                                                   chunkname=str(
                                                                                                       seg + '-' + frag)))
-    if int(frag) == 102 and int(frag) == 596:
+    
+    if int(seg) == 102 and int(frag) == 596:
         finish_flag = True
     file.flush()                                                                                  
     return html.content
@@ -153,8 +156,13 @@ def async(f):
 
 @async
 def A():
+    global end_t
     while(True):
         sleep(1)
+        # print('---------------------------')
+        # print('current time is ' + str(time.time()))
+        # print('end_t is ' + str(end_t))
+        # print('---------------------------')
         if time.time() - end_t > 60 or finish_flag:
             print('shutdown-------------------')
             file.close()
@@ -183,6 +191,7 @@ if __name__ == '__main__':
         need_dns = False
         default_port = sys.argv[5]
         # print(default_port)
+        Tput[int(default_port)] = 0.0
         p = requests.get('http://127.0.0.1:'+str(dns_port)+'/occupy_port:' + str(default_port)).content.decode()
         # print(p)
     else:
@@ -198,3 +207,16 @@ if __name__ == '__main__':
 
     # python3 home/CS305-proj/starter_proxy/proxy.py aaa 0.5 8899 8888 8080
     # python3 home/CS305-proj/starter_proxy/proxy.py aaa 0.5 8898 8888 8080
+
+
+    # python3 netsim.py onelink start -s servers/2servers
+    # python3 netsim.py onelink run -e topology/onelink/onelink.events
+    # python3 netsim.py onelink stop 
+
+
+# python3 /home/CS305-proj/docker_setup/netsim/netsim.py onelink start -l /home/CS305-proj/docker_setup/netsim/log.txt
+
+# python3 /home/CS305-proj/docker_setup/netsim/netsim.py onelink run -e /home/CS305-proj/docker_setup/netsim/topology/onelink/onelink.events
+
+
+# python3 /home/CS305-proj/starter_proxy/proxy.py /home/CS305-proj/starter_proxy/aaa 0.5 8899 8888 15641
